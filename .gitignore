@@ -1,0 +1,6 @@
+# Builded objects
+Debug/
+Release/
+
+# Project settings
+#.settings/
