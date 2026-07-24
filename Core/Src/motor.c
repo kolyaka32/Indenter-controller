@@ -101,7 +101,7 @@ void motorCheckStep(Motor* _motor) {
 	// Check, if waiting position and already at target
 	if (waiting == WaitPos && _motor->currentPos == _motor->targetPos) {
 		// Stop moving
-		HAL_TIM_Base_Stop_IT(_motor->timHandler);
+		//HAL_TIM_Base_Stop_IT(_motor->timHandler);
 		// Report of end
 		sendUSBreachPos();
 		waiting = WaitNone;

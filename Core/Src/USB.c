@@ -18,6 +18,10 @@ typedef struct {
 	int pos;
 } PosPacket;
 PosPacket posPacket;
+typedef struct {
+	int type;
+	float distance;
+} StepPacket;
 
 
 void sendUSBstate() {
@@ -62,7 +66,7 @@ void sendUSBreachForce() {
 
 void getUSBdata(uint8_t* _buf, uint32_t* _len) {
 	// Deciding to do by first byte
-	switch(_buf[0]) {
+	switch(((int*)_buf)[0]) {
 	case 0:
 		// Code of none
 		break;
@@ -120,7 +124,7 @@ void getUSBdata(uint8_t* _buf, uint32_t* _len) {
 	case 8:
 		// Set move up by number of steps
 		motorSetLowSpeed(&motor);
-		motorSetMovePlusBy(&motor, *((float*)(_buf+1)));
+		motorSetMovePlusBy(&motor, ((StepPacket*)_buf)->distance);
 		state = Working;
 		waiting = WaitPos;
 		break;
@@ -128,7 +132,7 @@ void getUSBdata(uint8_t* _buf, uint32_t* _len) {
 	case 9:
 		// Set move down by number of steps
 		motorSetLowSpeed(&motor);
-		motorSetMoveMinusBy(&motor, *((float*)(_buf+1)));
+		motorSetMoveMinusBy(&motor, ((StepPacket*)_buf)->distance);
 		state = Working;
 		waiting = WaitPos;
 		break;
@@ -136,7 +140,7 @@ void getUSBdata(uint8_t* _buf, uint32_t* _len) {
 	case 10:
 		// Set move to target
 		motorSetLowSpeed(&motor);
-		motorSetTarget(&motor, *((int*)(_buf+1)));
+		motorSetTarget(&motor, ((PosPacket*)_buf)->pos);
 		state = Working;
 		waiting = WaitPos;
 		break;

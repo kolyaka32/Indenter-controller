@@ -38,6 +38,3 @@ int motorGetPosition(const Motor* motor);             // Return current position
 float motorGetLocation(const Motor* motor);           // Return current position [mm]
 // Interrupts
 void motorCheckStep(Motor* motor);
-// Interaction with sensors
-//void motorReachStart(Motor* motor);
-//void motorReachEnd(Motor* motor);

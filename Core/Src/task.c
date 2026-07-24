@@ -31,9 +31,6 @@ void init() {
 	// Ручной режим
 	displayPutString("Manual mode");
 
-	motorSetHighSpeed(&motor);
-	motorSetMoveMinus(&motor);
-
 	// Signaling of correct initialisation
 	HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, 1);
 	counter = 0;

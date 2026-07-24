@@ -72,8 +72,7 @@ void checkSensors() {
 
 	case 1:
 		// Temperature sensor
-		TempUn tempUn = {.part = {buffer[4], buffer[3]}};
-		lastTemp = tempUn.temp;
+		lastTemp = buffer[3]*256+buffer[4];
 		break;
 
 	default:
