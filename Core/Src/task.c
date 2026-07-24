@@ -5,14 +5,21 @@
 
 
 // Variables
-App app;
-Motor motor = {.pinPul = MOTOR_STEP_Pin, .pinDir = MOTOR_REVERCE_Pin,
+Motor motor = {.gearboxRatio = 1.0/40.0, .substepsCount = 40000.0, .timHandler = &htim3,
+	.pinPul = MOTOR_STEP_Pin, .pinDir = MOTOR_REVERCE_Pin,
 	.portPul = MOTOR_STEP_GPIO_Port, .portDir = MOTOR_REVERCE_GPIO_Port};
+int counter = 0;
+int state = None;
+int waiting = Undefined;
 
 
 void init() {
 	// Motor initialisation
 	motorReset(&motor);
+	sensorInit();
+
+	// Starting display
+    displayInit();
 
 	// Working with display
 	/*displaySetAddress(1);
@@ -24,48 +31,45 @@ void init() {
 	// Ручной режим
 	displayPutString("Manual mode");
 
+	motorSetHighSpeed(&motor);
+	motorSetMoveMinus(&motor);
+
 	// Signaling of correct initialisation
 	HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, 1);
-	app.counter = 0;
+	counter = 0;
+	state = Waiting;
+	waiting = WaitNone;
 }
 
 void loop() {
-	// Check new USB instructions
+	// USB Check new instructions
 	// Already procced asynchonous
-	// Check new RS-485 messages
-	//checkSensors();
 
-	// Tact actions
+	// RS-485 Check new messages
+	// Already procced asynchonous
+
 	// RS485 Ask force sensor
-	if (app.counter % 50 == 0) {
+	if (counter % 20 == 10) {
 		askForceSensor();
 	}
 	// RS485 Ask temperature sensor
-	if (app.counter % 200 == 10) {
+	if (counter % 50 == 15) {
 		askTemperatureSensor();
 	}
 
-	// USB Send packet with last measured values
-	if (app.counter % 50 == 20) {
-		sendUSBpacket();
-	}
 	// USB Send packet with current state (also as alive)
-	if (app.counter % 50 == 30) {
+	if (counter % 200 == 5) {
 		sendUSBstate();
 	}
-	// Motor movement
-	// ! //HAL_GPIO_WritePin(GPIOB, MOTOR_STEP_Pin, motor);
-	motorCheckStep(&motor);
-	// Check end conditionals
-	// !
+	// Motor movement - asynchronos
 
 	// Display?
 	//displaySetAddress(0);
 	//displayPutString("Hello");
 
 	// Show alive
-	HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, app.counter%2);
-	app.counter++;
+	HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+	counter++;
 
 	HAL_Delay(10);
 }

@@ -3,9 +3,17 @@
 #include "main.h"
 
 
-// Object for work with UART (rs485 in our case)
-extern UART_HandleTypeDef huart2;
+// Data types
+typedef float Position;
+typedef float Force;
+typedef uint16_t Temp;
 
+extern Force lastForce;
+extern Temp lastTemp;
+
+// Forces for comparison in waiting [N]
+extern Force compareGreaterForce;
+extern Force compareLessForce;
 
 void sensorInit();
 
@@ -15,4 +23,3 @@ void askTemperatureSensor();
 
 // Variants of getting data and updating it
 void checkSensors();
-void recieveUART();

@@ -6,20 +6,27 @@
 #include "motor.h"
 
 
-// Data types
-typedef float Force;
-typedef float Temp;
+// States of current device
+enum State {
+	None,
+	Waiting,
+	Working,
+};
 
-// Last measured values
-typedef struct {
-	int counter;
-	Force lastForce;
-	Temp lastTemperature;
-} App;
+// Posible waitings
+enum Waiting {
+	Undefined,
+	WaitNone,
+	WaitPos,
+	WaitReachForce,
+	WaitLoseForce,
+};
 
 // All current app data
-extern App app;
 extern Motor motor;
+extern int counter;
+extern int state;
+extern int waiting;
 
 // Function, that run before main cycle once
 void init();
