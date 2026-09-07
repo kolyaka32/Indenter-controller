@@ -5,42 +5,72 @@
 #include "task.h"
 
 
-int statePacket[1];
+typedef uint16_t Type;
 typedef struct {
-	int type;
+	Type type;
+} StatePacket;
+StatePacket statePacket;
+typedef struct {
+	Type type;
+	uint16_t unused;
 	Position position;
 	Force force;
 	uint16_t temperature;
 } DataPacket;
 DataPacket dataPacket;
 typedef struct {
-	int type;
-	int pos;
+	Type type;
+	uint16_t speed;
+	uint16_t pos;
 } PosPacket;
 PosPacket posPacket;
 typedef struct {
-	int type;
+	Type type;
+	uint16_t speed;
 	float distance;
 } StepPacket;
+typedef struct {
+	Type type;
+	uint16_t speed;
+} MovePacket;
+typedef struct {
+	Type type;
+	uint16_t unused;
+	float force;
+} ForcePacket;
 
 
+enum SendPacketType {
+	SendNone,        // Nothing, for apply connection
+	// Current state
+	SendWaiting,     // Currently waiting for command
+	SendWorking,     // Currently moving
+	// New measures
+	SendPacket,      // One frame with new [position], [force] and [temperature]
+	// Complete task
+	SendPosition,    // Signal with current [position]
+	SendReachPos,    // Signal, that reach setted position
+	SendReachForce,  // Signal, that reach setted force
+};
+
+// Send part
 void sendUSBstate() {
 	// Check, what to send depend on state
 	switch (state) {
 	case Waiting:
-		statePacket[0] = 1; // Message of waiting state
-		CDC_Transmit_FS((uint8_t*)statePacket, sizeof(statePacket));
+		statePacket.type = SendWaiting;
+		CDC_Transmit_FS((uint8_t*)&statePacket, sizeof(statePacket));
 		break;
 
 	case Working:
-		statePacket[0] = 2; // Message of working state
-		CDC_Transmit_FS((uint8_t*)statePacket, sizeof(statePacket));
+		statePacket.type = SendWorking;
+		CDC_Transmit_FS((uint8_t*)&statePacket, sizeof(statePacket));
 		break;
 	}
 }
 
 void sendUSBpacket() {
-	dataPacket.type = 3;
+	dataPacket.type = SendPacket;
 	dataPacket.position = motorGetLocation(&motor);
 	dataPacket.force = lastForce;
 	dataPacket.temperature = lastTemp;
@@ -48,104 +78,109 @@ void sendUSBpacket() {
 }
 
 void sendUSBpos() {
-	posPacket.type = 4;
+	posPacket.type = SendPosition;
+	posPacket.speed = 0;
 	posPacket.pos = motorGetPosition(&motor);
 	CDC_Transmit_FS((uint8_t*)&posPacket, sizeof(posPacket));
 }
 
 void sendUSBreachPos() {
-	statePacket[0] = 5;
-	CDC_Transmit_FS((uint8_t*)statePacket, sizeof(statePacket));
+	statePacket.type = SendReachPos;
+	CDC_Transmit_FS((uint8_t*)&statePacket, sizeof(statePacket));
 }
 
 void sendUSBreachForce() {
-	statePacket[0] = 6;
-	CDC_Transmit_FS((uint8_t*)statePacket, sizeof(statePacket));
+	statePacket.type = SendReachForce;
+	CDC_Transmit_FS((uint8_t*)&statePacket, sizeof(statePacket));
 }
 
 
+// Recieve part
+enum GetPacketType {
+	GetNone,
+	// Getters
+	GetPos,       // Ask current position
+	// Set sensors
+	GetReachForce,   // Send to said, when exceed setted [force]
+	GetLowerForce,   // Send to send, when get lower setted [force]
+	// Movement
+	GetSetMoveUp,    // Start move up with [speed]
+	GetSetMoveDown,  // Start move down with [speed]
+	GetSetStepUp,    // Move up with [speed] by specified number of [steps]
+	GetSetStepDown,  // Move down with [speed] by specified number of [steps]
+	GetSetMoveTo,    // Move with [speed] to setted [position]
+	// Stop
+	GetSetStop,      // Stop movement
+};
+
 void getUSBdata(uint8_t* _buf, uint32_t* _len) {
 	// Deciding to do by first byte
-	switch(((int*)_buf)[0]) {
-	case 0:
+	switch(((StatePacket*)_buf)->type) {
+	case GetNone:
 		// Code of none
 		break;
 
-	case 1:
+	case GetPos:
 		// Get position
 		sendUSBpos();
 		// Not changing state
 		break;
 
-	case 2:
+	case GetReachForce:
 		// Set reach force
 		// Not changing state
 		waiting = WaitReachForce;
+		forceTarget = ((ForcePacket*)_buf)->force;
 		break;
 
-	case 3:
+	case GetLowerForce:
 		// Set lost force
 		// Not changing state
 		waiting = WaitLoseForce;
+		forceTarget = ((ForcePacket*)_buf)->force;
 		break;
 
-	case 4:
-		// Set move up at work speed
-		motorSetLowSpeed(&motor);
+	case GetSetMoveUp:
+		// Set move up
+		motorSetSpeedPacket(&motor, ((MovePacket*)_buf)->speed);
 		motorSetMovePlus(&motor);
 		state = Working;
 		waiting = WaitNone;
 		break;
 
-	case 5:
-		// Set move down at work speed
-		motorSetLowSpeed(&motor);
+	case GetSetMoveDown:
+		// Set move down at speed selected speed
+		motorSetSpeedPacket(&motor, ((MovePacket*)_buf)->speed);
 		motorSetMoveMinus(&motor);
 		state = Working;
 		waiting = WaitNone;
 		break;
 
-	case 6:
-		// Set move up at idle speed
-		motorSetHighSpeed(&motor);
-		motorSetMovePlus(&motor);
-		state = Working;
-		waiting = WaitNone;
-		break;
-
-	case 7:
-		// Set move down at idle speed
-		motorSetHighSpeed(&motor);
-		motorSetMoveMinus(&motor);
-		state = Working;
-		waiting = WaitNone;
-		break;
-
-	case 8:
-		// Set move up by number of steps
-		motorSetLowSpeed(&motor);
+	case GetSetStepUp:
+		// Set move up by number of steps at speed selected speed
+		motorSetSpeedPacket(&motor, ((StepPacket*)_buf)->speed);
 		motorSetMovePlusBy(&motor, ((StepPacket*)_buf)->distance);
 		state = Working;
 		waiting = WaitPos;
 		break;
 
-	case 9:
-		// Set move down by number of steps
-		motorSetLowSpeed(&motor);
+	case GetSetStepDown:
+		// Set move down by number of steps at speed selected speed
+		motorSetSpeedPacket(&motor, ((StepPacket*)_buf)->speed);
 		motorSetMoveMinusBy(&motor, ((StepPacket*)_buf)->distance);
 		state = Working;
 		waiting = WaitPos;
 		break;
 
-	case 10:
+	case GetSetMoveTo:
 		// Set move to target
-		motorSetLowSpeed(&motor);
+		motorSetSpeedPacket(&motor, ((PosPacket*)_buf)->speed);
 		motorSetTarget(&motor, ((PosPacket*)_buf)->pos);
 		state = Working;
 		waiting = WaitPos;
 		break;
 
-	case 11:
+	case GetSetStop:
 		// Code of stop movement
 		motorSetStop(&motor);
 		state = Waiting;

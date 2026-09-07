@@ -83,14 +83,26 @@ void motorSetSpeed(Motor* _motor, float _speed) {
 	_motor->timHandler->Instance->ARR = frequency - 1;
 }
 
-void motorSetHighSpeed(Motor* _motor) {
-	// Fast speed in 8000 steps/s or 4 mkm/s
-	motorSetSpeed(_motor, 4.0);
-}
+void motorSetSpeedPacket(Motor* _motor, uint16_t _message) {
+	switch (_message) {
+	case 1:
+		// Low (work speed)
+		motorSetSpeed(_motor, 1.0);
+		break;
 
-void motorSetLowSpeed(Motor* _motor) {
-	// Basic speed in 2000 steps/s or 1 mkm/s
-	motorSetSpeed(_motor, 1.0);
+	case 2:
+		// Normal (idle speed)
+		motorSetSpeed(_motor, 4.0);
+		break;
+
+	case 3:
+		// Fast speed
+		motorSetSpeed(_motor, 10.0);
+		break;
+
+	default:
+		return;
+	}
 }
 
 void motorSetStop(Motor* _motor) {
@@ -101,7 +113,7 @@ void motorCheckStep(Motor* _motor) {
 	// Check, if waiting position and already at target
 	if (waiting == WaitPos && _motor->currentPos == _motor->targetPos) {
 		// Stop moving
-		//HAL_TIM_Base_Stop_IT(_motor->timHandler);
+		HAL_TIM_Base_Stop_IT(_motor->timHandler);
 		// Report of end
 		sendUSBreachPos();
 		waiting = WaitNone;

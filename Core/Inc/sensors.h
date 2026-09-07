@@ -11,10 +11,6 @@ typedef uint16_t Temp;
 extern Force lastForce;
 extern Temp lastTemp;
 
-// Forces for comparison in waiting [N]
-extern Force compareGreaterForce;
-extern Force compareLessForce;
-
 void sensorInit();
 
 // Function for interacting with sensors

@@ -11,6 +11,7 @@ Motor motor = {.gearboxRatio = 1.0/40.0, .substepsCount = 40000.0, .timHandler =
 int counter = 0;
 int state = None;
 int waiting = Undefined;
+float forceTarget = 50.0;
 
 
 void init() {

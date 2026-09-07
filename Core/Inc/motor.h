@@ -31,10 +31,11 @@ void motorSetMovePlus(Motor* motor);                  // Set move in plus direct
 void motorSetMoveMinus(Motor* motor);                 // Set move in minus direction
 void motorSetTarget(Motor* motor, int target);        // Set movement to target position [steps]
 void motorSetSpeed(Motor* motor, float speed);        // Set speed [mm/s]
-void motorSetHighSpeed(Motor* motor);                 // Set movement speed to high (idle movement)
+void motorSetSpeedPacket(Motor* motor, uint16_t message);  // Set movement speed according to message
 void motorSetLowSpeed(Motor* motor);                  // Set movement speed to low (work movement)
 void motorSetStop(Motor* motor);                      // Stop moving anywhere
 int motorGetPosition(const Motor* motor);             // Return current position [steps]
 float motorGetLocation(const Motor* motor);           // Return current position [mm]
 // Interrupts
 void motorCheckStep(Motor* motor);
+

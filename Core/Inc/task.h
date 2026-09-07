@@ -27,6 +27,7 @@ extern Motor motor;
 extern int counter;
 extern int state;
 extern int waiting;
+extern float forceTarget;
 
 // Function, that run before main cycle once
 void init();

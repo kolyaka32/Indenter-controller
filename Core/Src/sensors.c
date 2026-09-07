@@ -13,8 +13,6 @@ typedef union {
 static uint8_t buffer[9];
 Force lastForce;
 uint16_t lastTemp;
-Force compareGreaterForce = 20.0;
-Force compareLessForce = 10.0;
 
 void sensorInit() {
 	HAL_UART_Receive_IT(&huart2, buffer, sizeof(buffer));
@@ -51,18 +49,18 @@ void checkSensors() {
 	case 16:
 		// Force sensor
 		ForceUn forceUn = {.part = {buffer[6], buffer[5], buffer[4], buffer[3]}};
-		lastForce = forceUn.force;
+		lastForce = forceUn.force * 100.0;
 		// Check on end waiting
 		if (waiting == WaitReachForce) {
-			if (lastForce > compareGreaterForce) {
-				sendUSBreachPos();
+			if (lastForce > forceTarget) {
+				sendUSBreachForce();
 				motorSetStop(&motor);
 				state = Waiting;
 				waiting = WaitNone;
 			}
 		} else if (waiting == WaitLoseForce) {
-			if (lastForce < compareLessForce) {
-				sendUSBreachPos();
+			if (lastForce < forceTarget) {
+				sendUSBreachForce();
 				motorSetStop(&motor);
 				state = Waiting;
 				waiting = WaitNone;
@@ -81,42 +79,6 @@ void checkSensors() {
 	// USB Send packet with last measured values
 	sendUSBpacket();
 }
-
-/*void checkSensorsBlocking() {
-	if (HAL_UART_Receive(&huart2, buffer, sizeof(buffer), 100) == HAL_OK) {
-		HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, 1);
-		// Find depend on source address (first byte)
-		switch (buffer[0]) {
-		case 16:
-			// Force sensor
-			lastForce = *(Force*)(buffer+3);
-			// Check on end waiting
-			if (waiting == WaitReachForce) {
-				if (lastForce > compareGreaterForce) {
-					sendUSBreachPos();
-					motorSetStop(&motor);
-					state = Waiting;
-					waiting = WaitNone;
-				}
-			} else if (waiting == WaitLoseForce) {
-				if (lastForce < compareLessForce) {
-					sendUSBreachPos();
-					motorSetStop(&motor);
-					state = Waiting;
-					waiting = WaitNone;
-				}
-			}
-			break;
-
-		case 1:
-			// Temperature sensor
-			lastTemp = *(Temp*)(buffer+3);
-			break;
-		};
-		// USB Send packet with last measured values
-		sendUSBpacket();
-	}
-}*/
 
 /*void getSensorsShowDisplay() {
 	uint8_t buffer[30];
