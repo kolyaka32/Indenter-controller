@@ -11,8 +11,8 @@
 
 ![Система целиком](/screenshots/Controller-box-external.jpg?raw=true)
 
-
 ## Принципиальная схема
+Дополнительно в программе [kicad](https://www.kicad.org/) была разработана общая электрическая схема шкафа.
 ![Принципиальная электрическая схема шкафа](/screenshots/Controller-box-external.jpg?raw=true)
 
 ## Настройка оборудования
