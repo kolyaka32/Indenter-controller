@@ -5,37 +5,41 @@
 #include "task.h"
 
 
+// Unified types in packets
 typedef uint16_t Type;
+typedef uint16_t Speed;
+typedef uint16_t Padding;
+// Packets
 typedef struct {
 	Type type;
 } StatePacket;
-StatePacket statePacket;
+static StatePacket statePacket;
 typedef struct {
 	Type type;
-	uint16_t unused;
+	Padding unused;
 	Position position;
 	Force force;
 	uint16_t temperature;
 } DataPacket;
-DataPacket dataPacket;
+static DataPacket dataPacket;
 typedef struct {
 	Type type;
-	uint16_t speed;
+	Padding speed;
 	uint16_t pos;
 } PosPacket;
-PosPacket posPacket;
+static PosPacket posPacket;
 typedef struct {
 	Type type;
-	uint16_t speed;
+	Speed speed;
 	float distance;
 } StepPacket;
 typedef struct {
 	Type type;
-	uint16_t speed;
+	Speed speed;
 } MovePacket;
 typedef struct {
 	Type type;
-	uint16_t unused;
+	Speed unused;
 	float force;
 } ForcePacket;
 
@@ -79,7 +83,6 @@ void sendUSBpacket() {
 
 void sendUSBpos() {
 	posPacket.type = SendPosition;
-	posPacket.speed = 0;
 	posPacket.pos = motorGetPosition(&motor);
 	CDC_Transmit_FS((uint8_t*)&posPacket, sizeof(posPacket));
 }
@@ -142,7 +145,7 @@ void getUSBdata(uint8_t* _buf, uint32_t* _len) {
 
 	case GetSetMoveUp:
 		// Set move up
-		motorSetSpeedPacket(&motor, ((MovePacket*)_buf)->speed);
+		motorSetSpeed(&motor, ((MovePacket*)_buf)->speed);
 		motorSetMovePlus(&motor);
 		state = Working;
 		waiting = WaitNone;
@@ -150,7 +153,7 @@ void getUSBdata(uint8_t* _buf, uint32_t* _len) {
 
 	case GetSetMoveDown:
 		// Set move down at speed selected speed
-		motorSetSpeedPacket(&motor, ((MovePacket*)_buf)->speed);
+		motorSetSpeed(&motor, ((MovePacket*)_buf)->speed);
 		motorSetMoveMinus(&motor);
 		state = Working;
 		waiting = WaitNone;
@@ -158,7 +161,7 @@ void getUSBdata(uint8_t* _buf, uint32_t* _len) {
 
 	case GetSetStepUp:
 		// Set move up by number of steps at speed selected speed
-		motorSetSpeedPacket(&motor, ((StepPacket*)_buf)->speed);
+		motorSetSpeed(&motor, ((StepPacket*)_buf)->speed);
 		motorSetMovePlusBy(&motor, ((StepPacket*)_buf)->distance);
 		state = Working;
 		waiting = WaitPos;
@@ -166,7 +169,7 @@ void getUSBdata(uint8_t* _buf, uint32_t* _len) {
 
 	case GetSetStepDown:
 		// Set move down by number of steps at speed selected speed
-		motorSetSpeedPacket(&motor, ((StepPacket*)_buf)->speed);
+		motorSetSpeed(&motor, ((StepPacket*)_buf)->speed);
 		motorSetMoveMinusBy(&motor, ((StepPacket*)_buf)->distance);
 		state = Working;
 		waiting = WaitPos;
@@ -174,7 +177,7 @@ void getUSBdata(uint8_t* _buf, uint32_t* _len) {
 
 	case GetSetMoveTo:
 		// Set move to target
-		motorSetSpeedPacket(&motor, ((PosPacket*)_buf)->speed);
+		motorSetSpeed(&motor, ((PosPacket*)_buf)->speed);
 		motorSetTarget(&motor, ((PosPacket*)_buf)->pos);
 		state = Working;
 		waiting = WaitPos;

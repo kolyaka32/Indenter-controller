@@ -73,36 +73,14 @@ void motorSetTarget(Motor* _motor, int _target) {
 	}
 }
 
-void motorSetSpeed(Motor* _motor, float _speed) {
+void motorSetSpeed(Motor* _motor, uint16_t _speed) {
 	// Source freq - 96 MGz, Prescaler - 48 (47 + 1)
 	// Setted, that counter equal work frequency
-	int frequency = 1000000 / _speed / _motor->substepsCount / _motor->gearboxRatio;
+	int frequency = 1000000.0 / _speed / _motor->substepsCount / _motor->gearboxRatio;
 
 	// Required to set ratio - 1 for correct functioning
 	_motor->timHandler->Instance->CNT = 0;
 	_motor->timHandler->Instance->ARR = frequency - 1;
-}
-
-void motorSetSpeedPacket(Motor* _motor, uint16_t _message) {
-	switch (_message) {
-	case 1:
-		// Low (work speed)
-		motorSetSpeed(_motor, 1.0);
-		break;
-
-	case 2:
-		// Normal (idle speed)
-		motorSetSpeed(_motor, 4.0);
-		break;
-
-	case 3:
-		// Fast speed
-		motorSetSpeed(_motor, 10.0);
-		break;
-
-	default:
-		return;
-	}
 }
 
 void motorSetStop(Motor* _motor) {

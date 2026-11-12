@@ -20,17 +20,14 @@ void init() {
 	sensorInit();
 
 	// Starting display
-    displayInit();
-
-	// Working with display
-	/*displaySetAddress(1);
+    /*displayInit();
+	displaySetAddress(1);
 	displayWriteData(3);
 	displayWriteData(3);
 	displayWriteData(3);
-	displayBlit();*/
+	displayBlit();
 	displaySetMode(0, 1);
-	// Ручной режим
-	displayPutString("Manual mode");
+	displayPutString("Manual mode");*/
 
 	// Signaling of correct initialisation
 	HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, 1);

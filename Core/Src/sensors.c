@@ -2,37 +2,29 @@
 #include "task.h"
 
 
-typedef union {
-	float force;
-	uint8_t part[4];
-} ForceUn;
-typedef union {
-	uint16_t temp;
-	uint8_t part[2];
-} TempUn;
-static uint8_t buffer[9];
+static uint8_t buffer[12];
 Force lastForce;
 uint16_t lastTemp;
 
 void sensorInit() {
-	HAL_UART_Receive_IT(&huart2, buffer, sizeof(buffer));
+	//HAL_UART_Receive_IT(&huart2, buffer, getLength);
+	HAL_UARTEx_ReceiveToIdle_IT(&huart2, buffer, sizeof(buffer));
 	HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, 0);
 }
 
 void askForceSensor() {
-	// Set driver enable
+	// Set transmit driver enable
 	HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, 1);
-	// Sending request:
-	// Get from 16 device multiple register (code 3) from 0x0046 0x0004 bytes, checksum:
+	// Request: get from 16 device multiple register (code 3) from 0x0046 0x0004 bytes, checksum:
 	uint8_t data[] = {0x10, 0x03, 0x00, 0x46, 0x00, 0x04, 0xA6, 0x9D};
 	HAL_UART_Transmit(&huart2, data, sizeof(data), 10);
 	HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, 0);
 }
 
 void askTemperatureSensor() {
-	// Set driver enable
+	// Set transmit driver enable
 	HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, 1);
-	// From 1 device read (4) from 0x0000 1 register, checksum:
+	// Request: from 1 device read (4) from 0x0000 1 register, checksum:
 	uint8_t data[] = {0x01, 0x04, 0x00, 0x00, 0x00, 0x02, 0x71, 0xCB};
 	HAL_UART_Transmit(&huart2, data, sizeof(data), 10);
 	HAL_GPIO_WritePin(RS485_DE_GPIO_Port, RS485_DE_Pin, 0);
@@ -40,16 +32,25 @@ void askTemperatureSensor() {
 
 void checkSensors() {
 	// Check, if not get full
-	if (HAL_UART_Receive_IT(&huart2, buffer, sizeof(buffer)) == HAL_BUSY) {
+	/*if (HAL_UART_Receive_IT(&huart2, buffer, getLength) == HAL_BUSY) {
 		return;
-	}
+	}*/
+	// Union for correct getting of values
+	typedef union {
+		float value;
+		uint8_t part[4];
+	} ForceUn;
+	typedef union {
+		uint16_t value;
+		uint8_t part[2];
+	} TempUn;
 
 	// Find depend on source address (first byte)
 	switch (buffer[0]) {
 	case 16:
 		// Force sensor
 		ForceUn forceUn = {.part = {buffer[6], buffer[5], buffer[4], buffer[3]}};
-		lastForce = forceUn.force * 100.0;
+		lastForce = forceUn.value * 100.0;
 		// Check on end waiting
 		if (waiting == WaitReachForce) {
 			if (lastForce > forceTarget) {
@@ -70,7 +71,9 @@ void checkSensors() {
 
 	case 1:
 		// Temperature sensor
-		lastTemp = buffer[3]*256+buffer[4];
+		TempUn tempUn = {.part = {buffer[4], buffer[3]}};
+		lastTemp = tempUn.value;  // ! Check correction
+		//lastTemp = buffer[3]*256 + buffer[4];
 		break;
 
 	default:
@@ -78,6 +81,9 @@ void checkSensors() {
 	};
 	// USB Send packet with last measured values
 	sendUSBpacket();
+
+	// Continue to get new packets
+	HAL_UARTEx_ReceiveToIdle_IT(&huart2, buffer, sizeof(buffer));
 }
 
 /*void getSensorsShowDisplay() {
