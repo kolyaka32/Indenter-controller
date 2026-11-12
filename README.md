@@ -15,6 +15,9 @@
 ## Принципиальная схема
 ![Принципиальная электрическая схема шкафа](/screenshots/Controller-box-external.jpg?raw=true)
 
+## Настройка оборудования
+Для настройки применяется отдельное внешнее подключение через USB-RS485 преобразователь, в процессе основной работы он участия не принимает.
+Для настройки модуля ввода тензодатчиков (от ОВЕН) применялась фирменная утилита [m110-v11060](https://owen.ru/product/moduli_analogovogo_vvoda_signalov_tenzodatchikov/documentation_and_software). Для настройки модуля ввода термометра и проверки передачи пакетов данных применялось [Modbus RW](https://www.modbus-rw.ru/).
 
 ## Сборка и загрузка
 Для работы над проектом применялись [cubeMX](https://www.st.com/en/development-tools/stm32cubemx.html) для подготовки и настройки входов, а для сборки и загрузки на микроконтроллер [cubeIDE](https://www.st.com/en/development-tools/stm32cubeide.html).
