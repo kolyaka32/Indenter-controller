@@ -3,4 +3,5 @@ Debug/
 Release/
 
 # Project settings
-#.settings/
+.settings/
+.metadata/
